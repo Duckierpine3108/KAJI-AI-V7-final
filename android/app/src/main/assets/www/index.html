@@ -1411,6 +1411,7 @@ body.electron-app{padding-top:32px;}
 }
 #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;backdrop-filter:blur(4px);}
 #sidebarOverlay.show{display:block;}
+/* Custom confirm */
 #kajiConfirm{position:fixed;inset:0;z-index:9999999;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
 #kajiConfirm.show{display:flex;}
 .kconf-box{background:var(--card,#1a1a2e);border:1px solid var(--pillb,rgba(255,255,255,.12));border-radius:20px;padding:26px 22px;width:min(310px,90vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:mIn .2s ease both;}
@@ -1440,18 +1441,27 @@ function openMobileSidebar(){document.getElementById('sidebar').classList.add('m
 function closeMobileSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('sidebarOverlay').classList.remove('show');}
 var _origTS=window.toggleSidebar;
 window.toggleSidebar=function(){if(window.innerWidth<=640){var sb=document.getElementById('sidebar');sb.classList.contains('mobile-open')?closeMobileSidebar():openMobileSidebar();}else if(_origTS){_origTS();}};
+/* kajiConfirm — replaces confirm() which is blocked on Android */
 var _kConfCb=null;
 function kajiConfirm(msg,okLabel,icon,cb){
   document.getElementById('kajiConfirmMsg').textContent=msg||'Are you sure?';
   document.getElementById('kajiConfirmOk').textContent=okLabel||'OK';
   document.getElementById('kajiConfirmOk').style.background=okLabel==='Delete'?'#e74c3c':'#2ecc71';
-  document.getElementById('kajiConfirmIcon').textContent=icon||'?';
+  document.getElementById('kajiConfirmIcon').textContent=icon||'❓';
   _kConfCb=cb||null;
   document.getElementById('kajiConfirm').classList.add('show');
 }
-document.getElementById('kajiConfirmOk').addEventListener('click',function(){document.getElementById('kajiConfirm').classList.remove('show');if(_kConfCb){_kConfCb(true);_kConfCb=null;}});
-document.getElementById('kajiConfirmCancel').addEventListener('click',function(){document.getElementById('kajiConfirm').classList.remove('show');if(_kConfCb){_kConfCb(false);_kConfCb=null;}});
-document.getElementById('kajiConfirm').addEventListener('click',function(e){if(e.target===this){this.classList.remove('show');if(_kConfCb){_kConfCb(false);_kConfCb=null;}}});
+document.getElementById('kajiConfirmOk').addEventListener('click',function(){
+  document.getElementById('kajiConfirm').classList.remove('show');
+  if(_kConfCb){_kConfCb(true);_kConfCb=null;}
+});
+document.getElementById('kajiConfirmCancel').addEventListener('click',function(){
+  document.getElementById('kajiConfirm').classList.remove('show');
+  if(_kConfCb){_kConfCb(false);_kConfCb=null;}
+});
+document.getElementById('kajiConfirm').addEventListener('click',function(e){
+  if(e.target===this){this.classList.remove('show');if(_kConfCb){_kConfCb(false);_kConfCb=null;}}
+});
 </script>
 <div id="electronTitleBar">
   <div class="etb-ctrls">
@@ -5721,7 +5731,6 @@ var css = `
         <div class="ks-nav-item" onclick="ksTab('shortcuts',this)">⌨️ Shortcuts</div>
         <div class="ks-nav-item" onclick="ksTab('advanced',this)">🔧 Advanced</div>
         <div class="ks-nav-item" onclick="ksTab('about',this)">ℹ️ About</div>
-        <div class="ks-nav-item" onclick="ksTab('private',this)">🔐 Private</div>
       </div>
       <div class="ks-content">
 
@@ -6104,16 +6113,6 @@ ollama pull gemma2:2b
           </div>
         </div>
 
-
-        <div class="ks-section" id="ks-private">
-          <div class="ks-section-title">🔐 Private Features</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <button type="button" class="ks-btn ks-btn-cyan" style="width:100%;padding:14px;text-align:left;display:flex;align-items:center;gap:14px;border-radius:14px;" onclick="openLockSetup()"><span style="font-size:24px;">🔐</span><div><div style="font-weight:700;font-size:13px;">App Lock</div><div style="font-size:11px;opacity:.6;margin-top:2px;">PIN · Pattern · Face ID</div></div></button>
-            <button type="button" class="ks-btn ks-btn-cyan" style="width:100%;padding:14px;text-align:left;display:flex;align-items:center;gap:14px;border-radius:14px;" onclick="openCodePatcher()"><span style="font-size:24px;">⚡</span><div><div style="font-weight:700;font-size:13px;">AI Code Patcher</div><div style="font-size:11px;opacity:.6;margin-top:2px;">Paste code → AI previews → commit</div></div></button>
-            <button type="button" class="ks-btn ks-btn-cyan" style="width:100%;padding:14px;text-align:left;display:flex;align-items:center;gap:14px;border-radius:14px;" onclick="openExportPanel()"><span style="font-size:24px;">📦</span><div><div style="font-weight:700;font-size:13px;">Export App</div><div style="font-size:11px;opacity:.6;margin-top:2px;">Public or Private HTML</div></div></button>
-            <button type="button" style="width:100%;padding:14px;text-align:left;display:flex;align-items:center;gap:14px;border-radius:14px;background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.25);font-family:'Space Grotesk',sans-serif;cursor:pointer;" onclick="if(window.KL&&KL.isSetup())KL.lock();else if(window.toast)toast('Set up App Lock first');"><span style="font-size:24px;">🔒</span><div><div style="font-weight:700;font-size:13px;">Lock App Now</div><div style="font-size:11px;opacity:.6;margin-top:2px;">Immediately secure the app</div></div></button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -6536,321 +6535,6 @@ var _origCallOllama = window.callOllama;
   }
 })();
 </script>
-<script>
-/* ═══════════════════════════════════════════════════════════════
-   KAJI AI — PRIVATE FEATURES + EVERYWHERE OVERLAY
-   App Lock · AI Code Patcher · Export · Chat Menu · Floating Button
-═══════════════════════════════════════════════════════════════ */
-
-/* ── STYLES ── */
-var _s=document.createElement('style');
-_s.textContent=`
-/* ── PRIVATE BADGE ── */
-.priv-badge{display:flex;align-items:center;gap:6px;padding:5px 10px;margin:5px 10px 0;background:rgba(142,68,173,.1);border:1px solid rgba(142,68,173,.22);border-radius:9px;font-size:11px;color:rgba(180,100,255,.75);font-family:'Space Grotesk',sans-serif;}
-
-/* ── LOCK SCREEN ── */
-#kajiLock{position:fixed;inset:0;z-index:999999;background:linear-gradient(135deg,#07051a,#050b14,#0a0a07);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;}
-#kajiLock.kl-off{display:none;}
-.kl-logo{font-family:'Lora',serif;font-size:34px;font-weight:500;color:rgba(0,212,255,.85);letter-spacing:6px;text-transform:uppercase;margin-bottom:4px;}
-.kl-sub{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.2);text-transform:uppercase;margin-bottom:36px;}
-.kl-tabs{display:flex;gap:6px;margin-bottom:28px;}
-.kl-tab{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:11.5px;cursor:pointer;transition:all .2s;font-family:'Space Grotesk',sans-serif;}
-.kl-tab.kl-on{background:rgba(0,212,255,.15);border-color:rgba(0,212,255,.4);color:#00d4ff;}
-.kl-pin-dots{display:flex;gap:14px;margin-bottom:26px;}
-.kl-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,212,255,.35);background:transparent;transition:all .2s;}
-.kl-dot.kl-filled{background:#00d4ff;border-color:#00d4ff;box-shadow:0 0 10px rgba(0,212,255,.5);}
-.kl-numpad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;}
-.kl-num{width:72px;height:72px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#fff;font-size:22px;font-weight:300;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;}
-.kl-num:hover{background:rgba(0,212,255,.12);border-color:rgba(0,212,255,.4);}
-.kl-num:active{transform:scale(.93);}
-.kl-pattern-canvas{cursor:crosshair;touch-action:none;border-radius:12px;display:block;}
-.kl-face-ring{position:relative;margin-bottom:12px;}
-.kl-face-ring::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(0,212,255,.3);animation:klRing 2s ease-in-out infinite;}
-@keyframes klRing{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.05);opacity:1}}
-.kl-face-video{width:200px;height:200px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,212,255,.3);}
-.kl-face-status{font-size:13px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:14px;}
-@keyframes klShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.kl-shake{animation:klShake .4s ease;}
-
-/* ── LOCK SETUP ── */
-#kajiLockSetup{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:20px;}
-#kajiLockSetup.kls-on{display:flex;}
-.kls-box{background:#0d0d1a;border:1px solid rgba(0,212,255,.2);border-radius:22px;padding:28px;width:min(460px,96vw);max-height:90vh;overflow-y:auto;}
-.kls-title{font-size:18px;font-weight:700;color:#00d4ff;margin-bottom:6px;}
-.kls-sub{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:20px;line-height:1.6;}
-.kls-card{border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;}
-.kls-card:hover{border-color:rgba(0,212,255,.35);background:rgba(0,212,255,.04);}
-.kls-card.kls-sel{border-color:#00d4ff;background:rgba(0,212,255,.08);}
-.kls-inp{width:100%;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.2);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:15px;padding:11px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:4px;box-sizing:border-box;margin-bottom:10px;}
-.kls-inp::placeholder{letter-spacing:1px;color:rgba(255,255,255,.2);}
-.kls-sel-inp{background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.2);color:rgba(0,212,255,.7);font-size:11px;padding:5px 8px;border-radius:7px;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-top:6px;}
-.kls-hint{font-size:11px;color:rgba(0,212,255,.5);text-align:center;margin-top:8px;min-height:18px;}
-.kls-btn-row{display:flex;gap:10px;margin-top:16px;}
-.kls-btn{flex:1;padding:12px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .2s;}
-.kls-btn-p{background:#00d4ff;color:#000;}
-.kls-btn-c{background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);}
-.kls-btn-d{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3);}
-
-/* ── AI CODE PATCHER ── */
-#kajiPatcher{position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.72);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;}
-#kajiPatcher.kp-on{display:flex;}
-.kp-box{background:#09090f;border:1px solid rgba(0,212,255,.18);border-radius:22px;width:min(980px,97vw);max-height:93vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 32px 100px rgba(0,0,0,.8);}
-.kp-head{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;background:rgba(0,212,255,.025);}
-.kp-title{font-size:15px;font-weight:700;color:#00d4ff;font-family:'Space Grotesk',sans-serif;flex:1;}
-.kp-badge{font-size:10px;padding:3px 8px;background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.25);border-radius:6px;color:rgba(0,212,255,.7);font-family:'JetBrains Mono',monospace;}
-.kp-x{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.kp-x:hover{border-color:#e74c3c;color:#e74c3c;}
-.kp-body{display:flex;flex:1;overflow:hidden;min-height:0;}
-.kp-left{flex:1;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05);min-width:0;}
-.kp-right{width:420px;display:flex;flex-direction:column;min-width:0;background:rgba(0,0,0,.2);}
-.kp-lbl{padding:9px 16px;font-size:10px;font-weight:700;color:rgba(0,212,255,.45);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
-.kp-ta{flex:1;background:transparent;border:none;outline:none;color:rgba(255,255,255,.88);font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:14px 16px;resize:none;line-height:1.75;tab-size:2;}
-.kp-ta::placeholder{color:rgba(255,255,255,.15);}
-.kp-preview{flex:1;overflow-y:auto;padding:0;}
-.kp-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.05);display:flex;gap:8px;flex-shrink:0;align-items:center;}
-.kp-btn{padding:9px 18px;border-radius:10px;border:none;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .18s;display:flex;align-items:center;gap:6px;}
-.kp-btn:disabled{opacity:.35;cursor:not-allowed;}
-.kp-analyze{background:linear-gradient(135deg,rgba(0,212,255,.18),rgba(100,50,200,.12));color:#00d4ff;border:1px solid rgba(0,212,255,.3);}
-.kp-analyze:hover:not(:disabled){background:linear-gradient(135deg,rgba(0,212,255,.28),rgba(100,50,200,.2));}
-.kp-commit{background:#2ecc71;color:#000;font-weight:700;}
-.kp-reject{background:rgba(231,76,60,.14);color:#e74c3c;border:1px solid rgba(231,76,60,.22);}
-.kp-clear{background:rgba(255,255,255,.05);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.07);}
-.kp-spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,212,255,.25);border-top-color:#00d4ff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-.kp-status{padding:6px 16px;font-size:10.5px;color:rgba(255,255,255,.25);font-family:'JetBrains Mono',monospace;border-top:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.kp-add{background:rgba(46,204,113,.1);border-left:3px solid #2ecc71;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#7effc0;white-space:pre-wrap;word-break:break-all;}
-.kp-rem{background:rgba(231,76,60,.09);border-left:3px solid #e74c3c;padding:5px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#ff9999;white-space:pre-wrap;text-decoration:line-through;opacity:.7;}
-.kp-ctx{padding:4px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,.28);white-space:pre-wrap;}
-.kp-summary{margin:12px 14px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.14);border-radius:10px;padding:12px 14px;}
-.kp-summary-t{font-size:12px;font-weight:700;color:#00d4ff;margin-bottom:6px;}
-.kp-summary-b{font-size:12px;color:rgba(255,255,255,.6);line-height:1.7;}
-.kp-cc{font-size:10.5px;color:rgba(255,255,255,.2);font-family:'JetBrains Mono',monospace;}
-
-/* ── EXPORT ── */
-#kajiExport{position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.65);backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;padding:20px;}
-#kajiExport.ke-on{display:flex;}
-.ke-box{background:#0d0d1a;border:1px solid rgba(0,212,255,.2);border-radius:22px;padding:28px;width:min(480px,96vw);}
-.ke-title{font-size:18px;font-weight:700;color:#00d4ff;margin-bottom:8px;}
-.ke-sub{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:22px;line-height:1.6;}
-.ke-opt{border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;gap:14px;align-items:center;}
-.ke-opt:hover{border-color:rgba(0,212,255,.35);background:rgba(0,212,255,.04);}
-.ke-opt.ke-sel{border-color:#00d4ff;background:rgba(0,212,255,.08);}
-.ke-opt-icon{font-size:28px;flex-shrink:0;}
-.ke-opt-name{font-size:14px;font-weight:700;color:#fff;}
-.ke-opt-desc{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;}
-.ke-lock{display:none;margin-bottom:14px;}
-.ke-pin{width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.2);color:#fff;font-size:22px;padding:10px 14px;border-radius:10px;outline:none;text-align:center;letter-spacing:8px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;}
-.ke-pin::placeholder{letter-spacing:2px;font-size:12px;color:rgba(255,255,255,.2);}
-.ke-prog{height:4px;background:rgba(255,255,255,.06);border-radius:4px;margin-bottom:14px;overflow:hidden;display:none;}
-.ke-prog-fill{height:100%;background:linear-gradient(90deg,#00d4ff,#8e44ad);border-radius:4px;width:0%;transition:width .4s;}
-.ke-btns{display:flex;gap:10px;}
-.ke-btn{flex:1;padding:12px;border-radius:12px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .2s;}
-.ke-btn-p{background:#00d4ff;color:#000;}
-.ke-btn-c{background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);}
-
-/* ── CHAT CTX MENU ── */
-.chat-ctx{position:fixed;z-index:999990;min-width:190px;padding:5px;background:var(--card,#fff);border:1px solid var(--pillb,#ddd);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.3);backdrop-filter:blur(16px);animation:mIn .14s ease;}
-.chat-ctx-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--text,#111);font-family:'Space Grotesk',sans-serif;transition:background .1s;user-select:none;}
-.chat-ctx-item:hover{background:var(--pill,#f3f3f3);}
-.chat-ctx-item.ctx-red{color:#e74c3c;}
-.chat-ctx-item.ctx-red:hover{background:rgba(231,76,60,.1);}
-.chat-ctx-sep{height:1px;background:var(--pillb,#ddd);margin:3px 8px;}
-.chat-item{position:relative;}
-.chat-3dot{display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--pill);border:1px solid var(--pillb);border-radius:6px;padding:1px 7px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;color:var(--muted);z-index:5;line-height:1.5;}
-.chat-item:hover .chat-3dot{display:block;}
-.chat-3dot:hover{color:var(--text);}
-
-
-`;
-document.head.appendChild(_s);
-
-/* ═══════════════════════════════════════
-   APP LOCK SYSTEM
-═══════════════════════════════════════ */
-var KL={
-  method:null,pinHash:null,patternHash:null,patternSize:3,
-  locked:false,onUnlock:null,input:'',patternNodes:[],_fs:null,
-  hash:function(s){var h=0;for(var i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}return(h>>>0).toString(36);},
-  load:function(){try{var d=JSON.parse(localStorage.getItem('kaji_lock')||'{}');KL.method=d.method||null;KL.pinHash=d.pinHash||null;KL.patternHash=d.patternHash||null;KL.patternSize=d.patternSize||3;}catch(e){}},
-  save:function(){localStorage.setItem('kaji_lock',JSON.stringify({method:KL.method,pinHash:KL.pinHash,patternHash:KL.patternHash,patternSize:KL.patternSize}));},
-  isSetup:function(){return!!KL.method;},
-  lock:function(cb){if(!KL.isSetup())return;KL.locked=true;KL.onUnlock=cb||null;KL.input='';KL.patternNodes=[];var el=document.getElementById('kajiLock');el.classList.remove('kl-off');KL._render();},
-  unlock:function(){KL.locked=false;document.getElementById('kajiLock').classList.add('kl-off');if(KL.onUnlock){KL.onUnlock();KL.onUnlock=null;}},
-  wrongPin:function(){KL.input='';KL._renderDots();var a=document.getElementById('klInputArea');if(a){a.classList.add('kl-shake');setTimeout(function(){a.classList.remove('kl-shake');},500);}if(window.toast)toast('❌ Wrong PIN');},
-  _render:function(){var m=KL.method||'pin';document.querySelectorAll('.kl-tab').forEach(function(t){t.classList.toggle('kl-on',t.dataset.m===m);});document.querySelectorAll('.kl-sec').forEach(function(s){s.style.display='none';});var sec=document.getElementById('klSec-'+m);if(sec)sec.style.display='flex';if(m==='pin')KL._renderDots();if(m==='pattern')KL._buildCanvas('klPatWrap',false);if(m==='face')KL._startFace();},
-  _renderDots:function(){var w=document.getElementById('klDots');if(!w)return;w.innerHTML='';for(var i=0;i<6;i++){var d=document.createElement('div');d.className='kl-dot'+(i<KL.input.length?' kl-filled':'');w.appendChild(d);}},
-  pressPin:function(v){if(v==='del'){KL.input=KL.input.slice(0,-1);KL._renderDots();return;}if(KL.input.length>=6)return;KL.input+=v;KL._renderDots();if(KL.input.length===6){var inp=KL.input;setTimeout(function(){if(KL.hash(inp)===KL.pinHash)KL.unlock();else KL.wrongPin();},80);}},
-  checkPattern:function(nodes){if(nodes.length<4)return;var str=nodes.join(',');if(KL.hash(str)===KL.patternHash){KL.unlock();}else{KL.patternNodes=[];var a=document.getElementById('klInputArea');if(a){a.classList.add('kl-shake');setTimeout(function(){a.classList.remove('kl-shake');},500);}if(window.toast)toast('❌ Wrong pattern');setTimeout(function(){KL._buildCanvas('klPatWrap',false);},600);}},
-  _buildCanvas:function(wrapId,isSetup){var wrap=document.getElementById(wrapId);if(!wrap)return;var sz=KL.patternSize||3;wrap.innerHTML='';var DOT=sz<=3?70:sz<=4?60:sz<=5?50:42,PAD=16,cS=DOT*sz+PAD*2;var cv=document.createElement('canvas');cv.className='kl-pattern-canvas';cv.width=cS;cv.height=cS;cv.style.cssText='width:'+cS+'px;height:'+cS+'px;';wrap.appendChild(cv);var ctx=cv.getContext('2d'),nodes=[],drag=false,mx=0,my=0;function ctr(i){return{x:PAD+(i%sz)*DOT+DOT/2,y:PAD+Math.floor(i/sz)*DOT+DOT/2};}function hit(x,y){var r=DOT*.32;for(var i=0;i<sz*sz;i++){var c=ctr(i);var dx=c.x-x,dy=c.y-y;if(dx*dx+dy*dy<r*r)return i;}return -1;}function draw(){ctx.clearRect(0,0,cS,cS);if(nodes.length>1){ctx.beginPath();ctx.strokeStyle='rgba(0,212,255,.6)';ctx.lineWidth=2.5;ctx.lineCap='round';for(var i=0;i<nodes.length;i++){var c=ctr(nodes[i]);i===0?ctx.moveTo(c.x,c.y):ctx.lineTo(c.x,c.y);}if(drag&&nodes.length){var lc=ctr(nodes[nodes.length-1]);ctx.moveTo(lc.x,lc.y);ctx.lineTo(mx,my);}ctx.stroke();}for(var i=0;i<sz*sz;i++){var c=ctr(i),active=nodes.indexOf(i)>=0;ctx.beginPath();ctx.arc(c.x,c.y,active?10:6,0,Math.PI*2);ctx.strokeStyle=active?'rgba(0,212,255,.6)':'rgba(255,255,255,.15)';ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.arc(c.x,c.y,active?8:5,0,Math.PI*2);ctx.fillStyle=active?'#00d4ff':'rgba(255,255,255,.2)';ctx.fill();if(active){ctx.fillStyle='#000';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(nodes.indexOf(i)+1,c.x,c.y);}}}function gp(e){var r=cv.getBoundingClientRect(),sx=cS/r.width,sy=cS/r.height;var src=e.touches?e.touches[0]:e;return{x:(src.clientX-r.left)*sx,y:(src.clientY-r.top)*sy};}cv.addEventListener('mousedown',function(e){drag=true;nodes=[];var p=gp(e);mx=p.x;my=p.y;var h=hit(p.x,p.y);if(h>=0)nodes.push(h);draw();e.preventDefault();});cv.addEventListener('mousemove',function(e){if(!drag)return;var p=gp(e);mx=p.x;my=p.y;var h=hit(p.x,p.y);if(h>=0&&nodes.indexOf(h)<0)nodes.push(h);draw();});cv.addEventListener('mouseup',function(){drag=false;draw();if(isSetup)_klsPatDone(nodes);else KL.checkPattern(nodes);});cv.addEventListener('mouseleave',function(){if(drag){drag=false;draw();if(isSetup)_klsPatDone(nodes);else KL.checkPattern(nodes);}});cv.addEventListener('touchstart',function(e){e.preventDefault();drag=true;nodes=[];var p=gp(e);mx=p.x;my=p.y;var h=hit(p.x,p.y);if(h>=0)nodes.push(h);draw();},{passive:false});cv.addEventListener('touchmove',function(e){e.preventDefault();var p=gp(e);mx=p.x;my=p.y;var h=hit(p.x,p.y);if(h>=0&&nodes.indexOf(h)<0)nodes.push(h);draw();},{passive:false});cv.addEventListener('touchend',function(){drag=false;draw();if(isSetup)_klsPatDone(nodes);else KL.checkPattern(nodes);},{passive:true});draw();},
-  _startFace:function(){var vid=document.getElementById('klFaceVid'),st=document.getElementById('klFaceSt');if(!vid)return;if(st)st.textContent='Starting camera…';navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}}).then(function(stream){KL._fs=stream;vid.srcObject=stream;vid.play();if(st)st.textContent='Looking for your face…';setTimeout(function(){if(KL._fs&&KL._fs.active){if(st)st.textContent='✅ Face recognised';setTimeout(function(){if(KL._fs)KL._fs.getTracks().forEach(function(t){t.stop();});KL._fs=null;KL.unlock();},600);}},2500);}).catch(function(){if(st)st.textContent='❌ Camera unavailable — use PIN instead.';});}
-};
-
-/* Build lock screen */
-(function(){
-  var ls=document.createElement('div');
-  ls.id='kajiLock';ls.className='kl-off';
-  ls.innerHTML='<div class="kl-logo">KAJI AI</div><div class="kl-sub">Private · Secured</div>'+
-    '<div class="kl-tabs">'+
-    '<button type="button" class="kl-tab kl-on" data-m="pin" onclick="KL.method=\'pin\';KL._render()">🔢 PIN</button>'+
-    '<button type="button" class="kl-tab" data-m="pattern" onclick="KL.method=\'pattern\';KL._render()">⬡ Pattern</button>'+
-    '<button type="button" class="kl-tab" data-m="face" onclick="KL.method=\'face\';KL._render()">👤 Face</button>'+
-    '</div>'+
-    '<div id="klInputArea">'+
-    '<div class="kl-sec" id="klSec-pin" style="display:flex;flex-direction:column;align-items:center;gap:0;">'+
-    '<div class="kl-pin-dots" id="klDots"></div>'+
-    '<div class="kl-numpad">'+[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(function(n){return n===''?'<div></div>':'<button type="button" class="kl-num" onclick="KL.pressPin(\''+(n==='⌫'?'del':n)+'\')">'+n+'</button>';}).join('')+'</div></div>'+
-    '<div class="kl-sec" id="klSec-pattern" style="display:none;flex-direction:column;align-items:center;gap:8px;"><div id="klPatWrap"></div><div style="font-size:11px;color:rgba(255,255,255,.3);">Draw your unlock pattern</div></div>'+
-    '<div class="kl-sec" id="klSec-face" style="display:none;flex-direction:column;align-items:center;gap:12px;"><div class="kl-face-ring"><video class="kl-face-video" id="klFaceVid" autoplay muted playsinline></video></div><div class="kl-face-status" id="klFaceSt">Position your face</div><button type="button" class="kl-tab" onclick="KL.method=\'pin\';KL._render()">Use PIN instead</button></div>'+
-    '</div>'+
-    '<div style="font-size:11px;color:rgba(255,255,255,.1);margin-top:22px;">KAJI AI · Private Edition</div>';
-  document.body.appendChild(ls);
-  KL.load();
-  if(KL.isSetup())setTimeout(function(){KL.lock();},300);
-  document.addEventListener('visibilitychange',function(){if(document.hidden&&KL.isSetup())KL._sl=true;else if(!document.hidden&&KL._sl&&KL.isSetup()&&!KL.locked){KL._sl=false;KL.lock();}});
-})();
-
-/* ═══════════════════════════════════════
-   LOCK SETUP
-═══════════════════════════════════════ */
-var _klsM='pin',_klsPH=null,_klsPN=[];
-function _klsPatDone(nodes){_klsPN=nodes.slice();var h=document.getElementById('klsPatHint');if(nodes.length>=4){_klsPH=KL.hash(nodes.join(','));if(h)h.textContent='✅ Pattern recorded ('+nodes.length+' dots)';}else{_klsPH=null;if(h)h.textContent='⚠️ Connect at least 4 dots';}}
-function openLockSetup(){document.getElementById('kajiLockSetup').classList.add('kls-on');_klsSelectM('pin');}
-function closeLockSetup(){document.getElementById('kajiLockSetup').classList.remove('kls-on');}
-function _klsSelectM(m){_klsM=m;_klsPH=null;_klsPN=[];['pin','pattern','face'].forEach(function(t){var c=document.getElementById('klsC-'+t);if(c)c.classList.toggle('kls-sel',t===m);var s=document.getElementById('klsSA-'+t);if(s)s.style.display=t===m?'block':'none';});if(m==='pattern'){KL.patternSize=parseInt(document.getElementById('klsPSz').value)||3;KL._buildCanvas('klsPatDraw',true);}}
-function klsSave(){if(_klsM==='pin'){var p1=document.getElementById('klsP1').value.trim(),p2=document.getElementById('klsP2').value.trim();if(p1.length!==6||!/^\d+$/.test(p1)){if(window.toast)toast('Enter a 6-digit PIN');return;}if(p1!==p2){if(window.toast)toast('PINs do not match');return;}KL.method='pin';KL.pinHash=KL.hash(p1);}else if(_klsM==='pattern'){if(!_klsPH){if(window.toast)toast('Draw a pattern with at least 4 dots');return;}KL.method='pattern';KL.patternHash=_klsPH;KL.patternSize=parseInt(document.getElementById('klsPSz').value)||3;}else if(_klsM==='face'){KL.method='face';KL.pinHash=null;KL.patternHash=null;}KL.save();closeLockSetup();if(window.toast)toast('🔐 App Lock enabled!');}
-function klsRemoveLock(){KL.method=null;KL.pinHash=null;KL.patternHash=null;KL.save();closeLockSetup();if(window.toast)toast('🔓 App Lock removed');}
-(function(){
-  var h='<div id="kajiLockSetup"><div class="kls-box">'+
-    '<div class="kls-title">🔐 Setup App Lock</div>'+
-    '<div class="kls-sub">Choose how to secure KAJI AI. Required to commit code changes or export private version.</div>'+
-    '<div id="klsC-pin" class="kls-card kls-sel" onclick="_klsSelectM(\'pin\')"><span style="font-size:26px;">🔢</span><div><div style="font-weight:700;font-size:13.5px;color:#fff;">PIN Lock</div><div style="font-size:11px;color:rgba(255,255,255,.4);">6-digit secure PIN</div></div></div>'+
-    '<div id="klsC-pattern" class="kls-card" onclick="_klsSelectM(\'pattern\')"><span style="font-size:26px;">⬡</span><div><div style="font-weight:700;font-size:13.5px;color:#fff;">Pattern Lock</div><div style="font-size:11px;color:rgba(255,255,255,.4);">Draw a pattern on dot grid</div><select id="klsPSz" class="kls-sel-inp" onclick="event.stopPropagation()" onchange="_klsSelectM(\'pattern\')"><option value="3">3×3 (9 dots)</option><option value="4">4×4 (16 dots)</option><option value="5">5×5 (25 dots)</option><option value="6">6×6 (36 dots)</option></select></div></div>'+
-    '<div id="klsC-face" class="kls-card" onclick="_klsSelectM(\'face\')"><span style="font-size:26px;">👤</span><div><div style="font-weight:700;font-size:13.5px;color:#fff;">Face Lock</div><div style="font-size:11px;color:rgba(255,255,255,.4);">Uses camera — no face data stored</div></div></div>'+
-    '<div id="klsSA-pin" style="display:block;margin-top:14px;"><input id="klsP1" type="password" maxlength="6" class="kls-inp" placeholder="Enter 6-digit PIN"><input id="klsP2" type="password" maxlength="6" class="kls-inp" placeholder="Confirm PIN"></div>'+
-    '<div id="klsSA-pattern" style="display:none;margin-top:14px;text-align:center;"><div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:10px;">Draw your unlock pattern</div><div id="klsPatDraw" style="display:inline-block;"></div><div class="kls-hint" id="klsPatHint">Connect at least 4 dots</div></div>'+
-    '<div id="klsSA-face" style="display:none;margin-top:14px;"><div style="background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.18);border-radius:10px;padding:13px;font-size:12px;color:rgba(0,212,255,.7);line-height:1.7;">✅ No face data stored. Camera activates only on lock screen.</div></div>'+
-    '<div class="kls-btn-row"><button type="button" class="kls-btn kls-btn-c" onclick="closeLockSetup()">Cancel</button><button type="button" class="kls-btn kls-btn-p" onclick="klsSave()">🔐 Enable Lock</button></div>'+
-    '<div style="text-align:center;margin-top:12px;"><button type="button" class="kls-btn kls-btn-d" style="width:auto;padding:8px 16px;font-size:12px;" onclick="klsRemoveLock()">Remove Lock</button></div>'+
-    '</div></div>';
-  document.body.insertAdjacentHTML('beforeend',h);
-})();
-
-/* ═══════════════════════════════════════
-   AI CODE PATCHER
-═══════════════════════════════════════ */
-function openCodePatcher(){if(KL.isSetup()&&!KL.locked){KL.lock(function(){_openPatcher();});}else{_openPatcher();}}
-function _openPatcher(){document.getElementById('kajiPatcher').classList.add('kp-on');}
-function closeCodePatcher(){document.getElementById('kajiPatcher').classList.remove('kp-on');}
-async function kpAnalyze(){
-  var code=document.getElementById('kpTA').value.trim();
-  if(!code){if(window.toast)toast('Paste your code first');return;}
-  var btn=document.getElementById('kpABtn');btn.disabled=true;btn.innerHTML='<span class="kp-spin"></span> Analyzing…';
-  document.getElementById('kpStat').textContent='AI analyzing…';
-  document.getElementById('kpPrev').innerHTML='<div style="padding:40px;text-align:center;color:rgba(255,255,255,.2);font-family:\'JetBrains Mono\',monospace;font-size:12px;"><div class="kp-spin" style="width:20px;height:20px;margin:0 auto 12px;"></div>Analyzing changes…</div>';
-  document.getElementById('kpCFoot').style.display='none';
-  var sys='You are a senior code reviewer. Analyze the submitted code change and respond ONLY in this exact JSON format:\n{"type":"ADD|FIX|REMOVE|MODIFY","title":"Short title","summary":"2-3 sentence explanation","impact":["impact 1","impact 2"],"risks":["risk 1"],"diff":[{"op":"add","line":"code"},{"op":"remove","line":"code"},{"op":"ctx","line":"code"}]}';
-  try{
-    var result=await callAIRaw(code,[],sys);
-    var clean=result.replace(/```json\n?/g,'').replace(/```/g,'').trim();
-    var data;try{data=JSON.parse(clean);}catch(e){var m=clean.match(/\{[\s\S]*\}/);data=m?JSON.parse(m[0]):null;}
-    if(!data)throw new Error('Could not parse AI response');
-    _kpRender(data);
-    document.getElementById('kpCFoot').style.display='flex';
-    document.getElementById('kpStat').textContent='Analysis complete · Review before committing';
-  }catch(e){
-    document.getElementById('kpPrev').innerHTML='<div style="padding:20px;color:#e74c3c;font-family:\'JetBrains Mono\',monospace;font-size:12px;">❌ '+_esc(e.message)+'</div>';
-    document.getElementById('kpStat').textContent='Analysis failed';
-  }
-  btn.disabled=false;btn.innerHTML='<span>🔍</span> Analyze';
-}
-function _kpRender(d){
-  var tc={ADD:'#2ecc71',FIX:'#3498db',REMOVE:'#e74c3c',MODIFY:'#f39c12'};
-  var ti={ADD:'✅ ADD',FIX:'🔧 FIX',REMOVE:'🗑️ REMOVE',MODIFY:'⚡ MODIFY'};
-  var color=tc[d.type]||'#00d4ff',icon=ti[d.type]||d.type;
-  var html='<div class="kp-summary"><div class="kp-summary-t" style="color:'+color+';">'+icon+' — '+_esc(d.title||'')+'</div><div class="kp-summary-b">'+_esc(d.summary||'')+'</div>';
-  if(d.impact&&d.impact.length)html+='<div style="margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.5);"><strong style="color:rgba(255,255,255,.7);">What happens:</strong><ul style="margin:4px 0 0 14px;">'+d.impact.map(function(i){return'<li>'+_esc(i)+'</li>';}).join('')+'</ul></div>';
-  if(d.risks&&d.risks.length)html+='<div style="margin-top:8px;font-size:11.5px;color:#f39c12;"><strong>⚠️ Risks:</strong><ul style="margin:4px 0 0 14px;">'+d.risks.map(function(r){return'<li>'+_esc(r)+'</li>';}).join('')+'</ul></div>';
-  html+='</div>';
-  if(d.diff&&d.diff.length){html+='<div style="padding:8px 14px;font-size:10px;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:1.5px;">DIFF PREVIEW</div>';d.diff.forEach(function(l){if(l.op==='add')html+='<div class="kp-add">+ '+_esc(l.line||'')+'</div>';else if(l.op==='remove')html+='<div class="kp-rem">- '+_esc(l.line||'')+'</div>';else html+='<div class="kp-ctx">  '+_esc(l.line||'')+'</div>';});}
-  document.getElementById('kpPrev').innerHTML=html;
-}
-function kpCommit(){if(KL.isSetup()){KL.lock(function(){_kpDoCommit();});}else{_kpDoCommit();}}
-function _kpDoCommit(){var code=document.getElementById('kpTA').value.trim();if(!code)return;try{var sc=document.createElement('script');sc.textContent=code;document.body.appendChild(sc);if(window.toast)toast('✅ Change committed and applied live!');document.getElementById('kpStat').textContent='✅ Committed';document.getElementById('kpCFoot').style.display='none';document.getElementById('kpTA').value='';document.getElementById('kpPrev').innerHTML='<div style="padding:40px;text-align:center;color:#2ecc71;font-size:14px;">✅ Applied</div>';document.getElementById('kpCC').textContent='0 chars';}catch(e){if(window.toast)toast('❌ Commit failed: '+e.message);}}
-function kpReject(){document.getElementById('kpTA').value='';document.getElementById('kpPrev').innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.18);font-family:\'JetBrains Mono\',monospace;font-size:12px;">Paste your code and click Analyze</div>';document.getElementById('kpCFoot').style.display='none';document.getElementById('kpStat').textContent='Ready';document.getElementById('kpCC').textContent='0 chars';}
-(function(){
-  var h='<div id="kajiPatcher"><div class="kp-box">'+
-    '<div class="kp-head"><span style="font-size:18px;">⚡</span><div class="kp-title">AI Code Patcher</div><span class="kp-badge">GitHub Copilot Style · Lock Protected</span><button type="button" class="kp-x" onclick="closeCodePatcher()">✕</button></div>'+
-    '<div class="kp-body">'+
-    '<div class="kp-left"><div class="kp-lbl"><span>📝 PASTE CODE CHANGE</span><span class="kp-cc" id="kpCC">0 chars</span></div>'+
-    '<textarea class="kp-ta" id="kpTA" spellcheck="false" placeholder="Paste code to ADD, FIX, or REMOVE.\n\nThe AI will detect what changed and show a full diff preview before you commit."></textarea>'+
-    '<div class="kp-footer"><button type="button" class="kp-btn kp-analyze" onclick="kpAnalyze()" id="kpABtn"><span>🔍</span> Analyze</button><button type="button" class="kp-btn kp-clear" onclick="kpReject()">Clear</button></div></div>'+
-    '<div class="kp-right"><div class="kp-lbl"><span>🔎 AI ANALYSIS & DIFF</span></div>'+
-    '<div class="kp-preview" id="kpPrev"><div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.18);font-family:\'JetBrains Mono\',monospace;font-size:12px;">Paste code and click Analyze</div></div>'+
-    '<div class="kp-footer" id="kpCFoot" style="display:none;"><button type="button" class="kp-btn kp-commit" onclick="kpCommit()"><span>✅</span> Commit</button><button type="button" class="kp-btn kp-reject" onclick="kpReject()"><span>✕</span> Reject</button></div></div>'+
-    '</div><div class="kp-status" id="kpStat">Ready · Paste code and click Analyze</div></div></div>';
-  document.body.insertAdjacentHTML('beforeend',h);
-  document.getElementById('kpTA').addEventListener('input',function(){document.getElementById('kpCC').textContent=this.value.length+' chars';});
-})();
-
-/* ═══════════════════════════════════════
-   EXPORT PANEL
-═══════════════════════════════════════ */
-var _keV='public';
-function openExportPanel(){document.getElementById('kajiExport').classList.add('ke-on');_keSelect('public');document.getElementById('keProg').style.display='none';document.getElementById('keLock').style.display='none';}
-function closeExportPanel(){document.getElementById('kajiExport').classList.remove('ke-on');}
-function _keSelect(v){_keV=v;['public','private'].forEach(function(t){var e=document.getElementById('keO-'+t);if(e)e.classList.toggle('ke-sel',t===v);});document.getElementById('keLock').style.display=v==='private'?'block':'none';}
-function keExport(){
-  if(_keV==='private'&&KL.isSetup()){var pin=document.getElementById('kePin').value.trim();if(pin.length!==6||KL.hash(pin)!==KL.pinHash){if(window.toast)toast('❌ Wrong PIN');return;}}
-  var prog=document.getElementById('keProg'),fill=document.getElementById('keProgFill');
-  prog.style.display='block';fill.style.width='0%';
-  setTimeout(function(){fill.style.width='40%';},100);
-  setTimeout(function(){fill.style.width='80%';},400);
-  setTimeout(function(){
-    fill.style.width='100%';
-    var src=document.documentElement.outerHTML;
-    if(_keV==='public'){src=src.replace(/<script>[^<]*KAJI AI — PRIVATE FEATURES[\s\S]*?<\/script>/,'<!-- private features removed -->');}
-    var blob=new Blob([src],{type:'text/html;charset=utf-8'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='KAJI-AI-'+_keV+'-'+new Date().toISOString().slice(0,10)+'.html';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
-    if(window.toast)toast('✅ Exported as '+_keV);
-    setTimeout(function(){closeExportPanel();prog.style.display='none';},800);
-  },700);
-}
-(function(){
-  var h='<div id="kajiExport"><div class="ke-box">'+
-    '<div class="ke-title">📦 Export App</div>'+
-    '<div class="ke-sub">Public removes all private features. Private includes everything — lock protected.</div>'+
-    '<div id="keO-public" class="ke-opt ke-sel" onclick="_keSelect(\'public\')"><span class="ke-opt-icon">🌐</span><div><div class="ke-opt-name">Public Version</div><div class="ke-opt-desc">Clean app — no lock, patcher, or export features</div></div></div>'+
-    '<div id="keO-private" class="ke-opt" onclick="_keSelect(\'private\')"><span class="ke-opt-icon">🔐</span><div><div class="ke-opt-name">Private Version</div><div class="ke-opt-desc">Full app with all private features</div></div></div>'+
-    '<div class="ke-lock" id="keLock"><div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:8px;">🔐 Enter PIN to export private version:</div><input type="password" id="kePin" class="ke-pin" maxlength="6" placeholder="6-digit PIN"></div>'+
-    '<div class="ke-prog" id="keProg"><div class="ke-prog-fill" id="keProgFill"></div></div>'+
-    '<div class="ke-btns"><button type="button" class="ke-btn ke-btn-c" onclick="closeExportPanel()">Cancel</button><button type="button" class="ke-btn ke-btn-p" onclick="keExport()">📥 Export</button></div>'+
-    '</div></div>';
-  document.body.insertAdjacentHTML('beforeend',h);
-})();
-
-/* ═══════════════════════════════════════
-   CHAT RIGHT-CLICK MENU
-═══════════════════════════════════════ */
-function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function _showCtx(e,id){e.preventDefault();e.stopPropagation();document.querySelectorAll('.chat-ctx').forEach(function(m){m.remove();});var menu=document.createElement('div');menu.className='chat-ctx';var items=[{i:'✏️',l:'Rename',fn:function(){_ctxRename(id);}},{i:'📌',l:'Pin to top',fn:function(){_ctxPin(id);}},{i:'📋',l:'Copy all',fn:function(){_ctxCopy(id);}},{sep:true},{i:'📤',l:'Export Markdown',fn:function(){_ctxExp(id,'md');}},{i:'📄',l:'Export TXT',fn:function(){_ctxExp(id,'txt');}},{i:'🔁',l:'Duplicate',fn:function(){_ctxDup(id);}},{sep:true},{i:'🗑️',l:'Delete',fn:function(){_ctxDel(id);},red:true}];items.forEach(function(item){if(item.sep){var d=document.createElement('div');d.className='chat-ctx-sep';menu.appendChild(d);return;}var el=document.createElement('div');el.className='chat-ctx-item'+(item.red?' ctx-red':'');el.innerHTML='<span>'+item.i+'</span><span>'+item.l+'</span>';el.onclick=function(){menu.remove();item.fn();};menu.appendChild(el);});document.body.appendChild(menu);var x=Math.min(e.clientX,window.innerWidth-200),y=Math.min(e.clientY,window.innerHeight-350);menu.style.left=x+'px';menu.style.top=y+'px';setTimeout(function(){function away(ev){if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('mousedown',away);}}document.addEventListener('mousedown',away);},10);}
-function _gc(id){return window.S&&S.chats&&S.chats.find(function(c){return String(c.id)===String(id);});}
-function _ctxRename(id){var c=_gc(id);if(!c)return;var n=prompt('Rename:',c.title);if(!n||!n.trim())return;c.title=n.trim();if(window.save)save();if(window.renderChatList)renderChatList();if(window.toast)toast('✅ Renamed');}
-function _ctxPin(id){if(!window.S||!S.chats)return;var i=S.chats.findIndex(function(c){return String(c.id)===String(id);});if(i<0)return;S.chats.unshift(S.chats.splice(i,1)[0]);if(window.save)save();if(window.renderChatList)renderChatList();if(window.toast)toast('📌 Pinned');}
-function _ctxCopy(id){var c=_gc(id);if(!c)return;var txt=c.messages.map(function(m){return(m.role==='user'?'You: ':'KAJI: ')+m.content;}).join('\n\n');navigator.clipboard.writeText(txt).then(function(){if(window.toast)toast('📋 Copied');});}
-function _ctxExp(id,fmt){var c=_gc(id);if(!c)return;var body=fmt==='md'?'# '+c.title+'\n\n'+c.messages.map(function(m){return'**'+(m.role==='user'?'You':'KAJI')+':** '+m.content;}).join('\n\n'):c.title+'\n\n'+c.messages.map(function(m){return(m.role==='user'?'[You] ':'[KAJI] ')+m.content;}).join('\n\n');var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:'text/plain'}));a.download=(c.title.replace(/[^a-z0-9]/gi,'_')||'chat')+'.'+fmt;a.click();if(window.toast)toast('📤 Exported');}
-function _ctxDup(id){var c=_gc(id);if(!c||!window.S)return;var copy=JSON.parse(JSON.stringify(c));copy.id=Date.now()+'';copy.title='Copy — '+c.title;var i=S.chats.indexOf(c);S.chats.splice(i+1,0,copy);if(window.save)save();if(window.renderChatList)renderChatList();if(window.toast)toast('🔁 Duplicated');}
-function _ctxDel(id){if(!confirm('Delete this chat?'))return;if(!window.S||!S.chats)return;S.chats=S.chats.filter(function(c){return String(c.id)!==String(id);});if(!S.chats.length)S.chats=[{id:Date.now()+'',title:'New Chat',messages:[],preview:''}];if(window.save)save();if(window.renderChatList)renderChatList();if(window.loadChat)loadChat(S.chats[0].id);if(window.toast)toast('🗑️ Deleted');}
-function _hookChats(){document.querySelectorAll('.chat-item').forEach(function(item){if(item.dataset.ph)return;item.dataset.ph='1';var onc=item.getAttribute('onclick')||'';var m=onc.match(/loadChat\(['"](.*?)['"]\)/);if(!m)return;var id=m[1];var dot=document.createElement('div');dot.className='chat-3dot';dot.textContent='•••';dot.addEventListener('mousedown',function(e){e.stopPropagation();_showCtx(e,id);});item.appendChild(dot);item.addEventListener('contextmenu',function(e){_showCtx(e,id);});});}
-(function(){var orig=window.renderChatList;window.renderChatList=function(){if(orig)orig.apply(this,arguments);setTimeout(_hookChats,80);};setTimeout(_hookChats,1500);document.addEventListener('kajiSplashDone',function(){setTimeout(_hookChats,500);});})();
-document.addEventListener('click',function(){document.querySelectorAll('.chat-ctx').forEach(function(m){m.remove();});});
-
-/* ═══════════════════════════════════════
-   PRIVATE BADGE
-═══════════════════════════════════════ */
-(function(){function addBadge(){if(document.getElementById('privBadge'))return;var sb=document.querySelector('.sb-head');if(!sb)return;var b=document.createElement('div');b.id='privBadge';b.className='priv-badge';b.innerHTML='🔐 Private Edition';sb.appendChild(b);}addBadge();document.addEventListener('kajiSplashDone',addBadge);})();
-</script>
-
 <script>
 /* ── CHAT RIGHT-CLICK MENU + DELETE FIX ── */
 (function(){
